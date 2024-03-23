@@ -8,14 +8,14 @@ Array<T>::Array(uint64_t InitSize)
         std::cerr << "Error: Memory Allocation failed in Array(uint64_t Size)!\n" << std::endl;
     }
     Size = InitSize;
-    CudaLock = false;
+    CurrentMode = Mode::NORMAL;
 }
 
 
 template<typename T>
 void Array<T>::Add(T Item)
 {
-    if(CudaLock) return;
+    if(CurrentMode != Mode::NORMAL) return;
 
 
 }
@@ -27,17 +27,22 @@ T Array<T>::Get(uint64_t Index)
 }
 
 template<typename T>
-Array<T> Array<T>::ToCudaArray()
+static Array<T> Array<T>::ToCudaArray(Array<T> *Array_)
 {
     T *CudaData;
-    cudaMalloc(&CudaData, sizeof(T) * Array_->Size);
+    int64_t DataSize = sizeof(T) * Array_->Size
+    cudaMalloc(&CudaData, DataSize);
+    cudaMemcpy(CudaData, Array_->Data, DataSize, cudaMemcpyKind::cudaMemcpyHostToDevice);
     Array<T> CudaArray = *Array_;
+    CudaArray.Data = CudaData;
+    CudaArray.CurrentMode = Mode::CUDA;
 
-    return nullptr;
+    return CudaArray;
 }
 
 template<typename T>
 static void Array<T>::CudaArrayFree(Array<T> *Array_)
 {
-
+    if(Array_->CurrentMode == Mode::CUDA) return;
+    
 }
